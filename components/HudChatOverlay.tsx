@@ -130,7 +130,7 @@ export default function HudChatOverlay() {
         <>
           {/* Messages Container */}
           <div
-            className="hud-chat-messages flex-1 max-h-64 sm:max-h-72 overflow-y-auto p-3.5 space-y-3 text-xs bg-black/40"
+            className="hud-chat-messages flex-1 h-[380px] max-h-[45vh] overflow-y-auto p-3.5 space-y-3 text-xs bg-black/40"
             style={{ backgroundColor: "rgba(0, 0, 0, 0.4)" }}
           >
             {messages.map((msg, i) => (
