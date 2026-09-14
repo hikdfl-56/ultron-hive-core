@@ -233,3 +233,46 @@ body {
     display: none;
   }
 }
+
+/* ——— HUD Chat Overlay ——— */
+.fixed { position: fixed; }
+.relative { position: relative; }
+.absolute { position: absolute; }
+.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+.top-6 { top: 1.5rem; }
+.left-6 { left: 1.5rem; }
+.right-6 { right: 1.5rem; }
+.z-50 { z-index: 50; }
+.z-0 { z-index: 0; }
+.pointer-events-auto { pointer-events: auto; }
+.pointer-events-none { pointer-events: none; }
+.h-screen { height: 100vh; }
+.w-screen { width: 100vw; }
+.overflow-hidden { overflow: hidden; }
+.mt-10 { margin-top: 2.5rem; }
+
+.hud-chat-panel {
+  box-shadow: 0 0 20px rgba(255, 170, 48, 0.2), inset 0 0 15px rgba(255, 140, 20, 0.08);
+}
+
+.hud-chat-messages::-webkit-scrollbar {
+  width: 4px;
+}
+
+.hud-chat-messages::-webkit-scrollbar-track {
+  background: rgba(10, 5, 0, 0.5);
+}
+
+.hud-chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(255, 170, 48, 0.4);
+  border-radius: 2px;
+}
+
+.hud-chat-messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 200, 100, 0.7);
+}
+
+.hud-chat-input:focus {
+  box-shadow: 0 0 10px rgba(255, 170, 48, 0.4), inset 0 0 8px rgba(255, 170, 48, 0.2);
+}
+
