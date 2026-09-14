@@ -212,6 +212,9 @@ export default function HudChatOverlay() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
+              onKeyUp={(e) => e.stopPropagation()}
+              onKeyPress={(e) => e.stopPropagation()}
               placeholder="Enter directive..."
               disabled={isLoading}
               className="hud-chat-input flex-1 bg-black/95 text-amber-100 placeholder-amber-600/70 border border-amber-500/50 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 rounded px-3 py-2 text-xs font-mono"
