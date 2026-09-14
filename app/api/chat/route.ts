@@ -101,9 +101,9 @@ export async function POST(req: Request) {
       }
     }
 
-    // Fallback attempt targeting gemini-1.5-pro if gemini-3.6-flash is throttled
+    // Fallback attempt targeting gemini-3.5-flash-lite if gemini-3.6-flash is throttled
     try {
-      const fallbackResponse = await callGeminiApi("gemini-1.5-pro", apiKey, message);
+      const fallbackResponse = await callGeminiApi("gemini-3.5-flash-lite", apiKey, message);
       if (fallbackResponse.ok) {
         const fallbackData = await fallbackResponse.json();
         const fallbackText = fallbackData.candidates?.[0]?.content?.parts?.[0]?.text;
