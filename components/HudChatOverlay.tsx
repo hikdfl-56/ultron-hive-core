@@ -9,9 +9,13 @@ interface Message {
 
 interface HudChatOverlayProps {
   onSpeakingChange?: (isSpeaking: boolean) => void;
+  onProcessingChange?: (isProcessing: boolean) => void;
 }
 
-export default function HudChatOverlay({ onSpeakingChange }: HudChatOverlayProps = {}) {
+export default function HudChatOverlay({
+  onSpeakingChange,
+  onProcessingChange,
+}: HudChatOverlayProps = {}) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -30,6 +34,10 @@ export default function HudChatOverlay({ onSpeakingChange }: HudChatOverlayProps
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
+
+  useEffect(() => {
+    onProcessingChange?.(isLoading);
+  }, [isLoading, onProcessingChange]);
 
   useEffect(() => {
     return () => {

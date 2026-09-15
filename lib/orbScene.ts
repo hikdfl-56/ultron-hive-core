@@ -4,6 +4,7 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+import gsap from "gsap";
 
 export interface OrbSceneApi {
   /** Rotate the camera around the orb by the given angles (radians). */
@@ -14,6 +15,10 @@ export interface OrbSceneApi {
   zoomOut(): void;
   resetView(): void;
   setSpeaking(speaking: boolean): void;
+  setProcessing(processing: boolean): void;
+  getOrbGroup(): THREE.Group;
+  animateColor(targetHex: string, duration: number): gsap.core.Tween;
+  animateGlowBrightness(targetBrightness: number, duration: number): gsap.core.Tween;
   dispose(): void;
 }
 
@@ -692,13 +697,48 @@ export function createOrbScene(container: HTMLElement): OrbSceneApi {
   }
 
   // ═══════════════════════════════════════════════
-  // AUDIO REACTIVITY & ANIMATION
+  // AUDIO REACTIVITY & VISUAL STATE ANIMATION
   // ═══════════════════════════════════════════════
   let isSpeaking = false;
+  let isProcessing = false;
   let speakingFactor = 0;
 
   function setSpeaking(speaking: boolean) {
     isSpeaking = speaking;
+  }
+
+  function setProcessing(processing: boolean) {
+    isProcessing = processing;
+  }
+
+  function getOrbGroup() {
+    return orbGroup;
+  }
+
+  const currentColor = new THREE.Color("#FF7F11");
+  const glowIntensity = { value: 1.0 };
+
+  function animateColor(targetHex: string, duration: number) {
+    const target = new THREE.Color(targetHex);
+    return gsap.to(currentColor, {
+      r: target.r,
+      g: target.g,
+      b: target.b,
+      duration,
+      onUpdate: () => {
+        glowSphereMat.color.copy(currentColor);
+        coreSphereMat.color.copy(currentColor);
+        dustMat.color.copy(currentColor);
+        icoWireMat.color.copy(currentColor);
+      },
+    });
+  }
+
+  function animateGlowBrightness(targetBrightness: number, duration: number) {
+    return gsap.to(glowIntensity, {
+      value: targetBrightness,
+      duration,
+    });
   }
 
   const clock = new THREE.Clock();
@@ -715,8 +755,8 @@ export function createOrbScene(container: HTMLElement): OrbSceneApi {
     const targetFactor = isSpeaking ? 1 : 0;
     speakingFactor += (targetFactor - speakingFactor) * 0.1;
 
-    // Velocity multiplier when speaking
-    const speedMult = 1.0 + speakingFactor * 2.5;
+    // Velocity multiplier when speaking or processing
+    const speedMult = (1.0 + speakingFactor * 2.5) * (isProcessing ? 1.4 : 1.0);
 
     // Outer shell rotation
     outerShell.rotation.y += 0.0015 * speedMult;
@@ -817,9 +857,9 @@ export function createOrbScene(container: HTMLElement): OrbSceneApi {
       });
     }
 
-    // Bloom pulse — increase brightness & pulse frequency dynamically when speaking
-    const baseBloom = 1.6 + Math.sin(t * 0.8) * 0.3;
-    const speakingBloomPulse = speakingFactor * (1.8 + Math.sin(t * 10.0) * 0.8);
+    // Bloom pulse — scaled by glowIntensity.value and speakingFactor
+    const baseBloom = (1.6 + Math.sin(t * 0.8) * 0.3) * glowIntensity.value;
+    const speakingBloomPulse = speakingFactor * (1.8 + Math.sin(t * 10.0) * 0.8) * glowIntensity.value;
     bloom.strength = baseBloom + speakingBloomPulse;
 
     // Update chromatic aberration time
@@ -871,6 +911,10 @@ export function createOrbScene(container: HTMLElement): OrbSceneApi {
     zoomOut: () => zoomBy(1.55),
     resetView,
     setSpeaking,
+    setProcessing,
+    getOrbGroup,
+    animateColor,
+    animateGlowBrightness,
     dispose,
   };
 }
