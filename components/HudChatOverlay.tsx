@@ -7,7 +7,11 @@ interface Message {
   content: string;
 }
 
-export default function HudChatOverlay() {
+interface HudChatOverlayProps {
+  onSpeakingChange?: (isSpeaking: boolean) => void;
+}
+
+export default function HudChatOverlay({ onSpeakingChange }: HudChatOverlayProps = {}) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -26,6 +30,42 @@ export default function HudChatOverlay() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+        onSpeakingChange?.(false);
+      }
+    };
+  }, [onSpeakingChange]);
+
+  const speakText = (text: string) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.pitch = 0.7;
+    utterance.rate = 0.9;
+
+    utterance.onstart = () => {
+      onSpeakingChange?.(true);
+    };
+
+    utterance.onend = () => {
+      onSpeakingChange?.(false);
+    };
+
+    utterance.onerror = (err) => {
+      console.warn("Speech synthesis error:", err);
+      onSpeakingChange?.(false);
+    };
+
+    window.speechSynthesis.speak(utterance);
+  };
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,17 +98,20 @@ export default function HudChatOverlay() {
         ...prev,
         { role: "assistant", content: replyContent },
       ]);
+      speakText(replyContent);
     } catch (err) {
       console.warn("API request failed or endpoint unavailable:", err);
       // Fallback mock response so UI never breaks
+      const fallbackContent =
+        "ULTRON Core active. Add AI_API_KEY to .env.local for live responses.";
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content:
-            "ULTRON Core active. Add AI_API_KEY to .env.local for live responses.",
+          content: fallbackContent,
         },
       ]);
+      speakText(fallbackContent);
     } finally {
       setIsLoading(false);
     }

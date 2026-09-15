@@ -12,7 +12,11 @@ const MODE_LABEL: Record<TrackerStatus["mode"], string> = {
   zoom: "ZOOM",
 };
 
-export default function JarvisOrb() {
+interface JarvisOrbProps {
+  isSpeaking?: boolean;
+}
+
+export default function JarvisOrb({ isSpeaking = false }: JarvisOrbProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const overlayRef = useRef<HTMLCanvasElement>(null);
@@ -35,6 +39,10 @@ export default function JarvisOrb() {
       sceneRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    sceneRef.current?.setSpeaking(isSpeaking);
+  }, [isSpeaking]);
 
   const stopGestures = useCallback(() => {
     trackerRef.current?.stop();

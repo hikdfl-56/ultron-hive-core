@@ -13,6 +13,7 @@ export interface OrbSceneApi {
   zoomIn(): void;
   zoomOut(): void;
   resetView(): void;
+  setSpeaking(speaking: boolean): void;
   dispose(): void;
 }
 
@@ -691,8 +692,15 @@ export function createOrbScene(container: HTMLElement): OrbSceneApi {
   }
 
   // ═══════════════════════════════════════════════
-  // ANIMATION
+  // AUDIO REACTIVITY & ANIMATION
   // ═══════════════════════════════════════════════
+  let isSpeaking = false;
+  let speakingFactor = 0;
+
+  function setSpeaking(speaking: boolean) {
+    isSpeaking = speaking;
+  }
+
   const clock = new THREE.Clock();
   let flickerTimer = 0;
   let rafId = 0;
@@ -703,43 +711,50 @@ export function createOrbScene(container: HTMLElement): OrbSceneApi {
     rafId = requestAnimationFrame(animate);
     const t = clock.getElapsedTime();
 
+    // Smoothly transition speakingFactor (0 -> 1 when speaking)
+    const targetFactor = isSpeaking ? 1 : 0;
+    speakingFactor += (targetFactor - speakingFactor) * 0.1;
+
+    // Velocity multiplier when speaking
+    const speedMult = 1.0 + speakingFactor * 2.5;
+
     // Outer shell rotation
-    outerShell.rotation.y += 0.0015;
+    outerShell.rotation.y += 0.0015 * speedMult;
     outerShell.rotation.x = Math.sin(t * 0.08) * 0.05;
 
     // Panel group follows shell but with slight offset
-    panelGroup.rotation.y += 0.0018;
+    panelGroup.rotation.y += 0.0018 * speedMult;
     panelGroup.rotation.x = Math.sin(t * 0.08 + 0.5) * 0.04;
 
     // Secondary shell counter-rotates slowly
-    shell2.rotation.y -= 0.001;
+    shell2.rotation.y -= 0.001 * speedMult;
     shell2.rotation.z = Math.sin(t * 0.12) * 0.03;
 
     // Inner core — opposite, faster
-    innerCore.rotation.y -= 0.005;
-    innerCore.rotation.z += 0.002;
+    innerCore.rotation.y -= 0.005 * speedMult;
+    innerCore.rotation.z += 0.002 * speedMult;
     innerCore.rotation.x = Math.cos(t * 0.1) * 0.08;
 
     // Innermost wireframe
-    icoWire.rotation.x += 0.008;
-    icoWire.rotation.y += 0.012;
+    icoWire.rotation.x += 0.008 * speedMult;
+    icoWire.rotation.y += 0.012 * speedMult;
 
     // Core pulse — dramatic surges but mostly transparent
     const wave1 = Math.sin(t * 1.2);
     const wave3 = Math.pow(Math.max(0, Math.sin(t * 0.4)), 5); // rare big surge
     const wave4 = Math.pow(Math.max(0, Math.sin(t * 0.7 + 2)), 8); // mega surge
     const fadeOut = Math.pow(Math.max(0, Math.sin(t * 0.25)), 3); // periodic full transparency
-    const surge = wave3 * 1.5 + wave4 * 2.0;
-    const coreScale = 1 + surge + Math.sin(t * 5) * 0.05;
+    const surge = wave3 * 1.5 + wave4 * 2.0 + speakingFactor * 1.2;
+    const coreScale = 1 + surge + Math.sin(t * (5 + speakingFactor * 10)) * (0.05 + speakingFactor * 0.1);
     coreSphere.scale.setScalar(coreScale);
     // Opacity: mostly very low (0-0.15), sometimes fully transparent, brief bright on surge
     const coreOpacity = Math.max(
       0,
-      (0.08 + wave1 * 0.05 + surge * 0.2) * (1 - fadeOut * 0.95),
+      (0.08 + wave1 * 0.05 + surge * 0.2 + speakingFactor * 0.2) * (1 - fadeOut * 0.95),
     );
-    coreSphereMat.opacity = Math.min(0.6, coreOpacity);
+    coreSphereMat.opacity = Math.min(0.8, coreOpacity);
     glowSphere.scale.setScalar(1 + surge * 0.8);
-    glowSphereMat.opacity = Math.max(0, (0.03 + surge * 0.08) * (1 - fadeOut * 0.9));
+    glowSphereMat.opacity = Math.max(0, (0.03 + surge * 0.08 + speakingFactor * 0.1) * (1 - fadeOut * 0.9));
     // Icosahedron wireframe stays visible even when glow fades
     icoWire.scale.setScalar(1 + surge * 0.6);
     icoWireMat.opacity = Math.min(1, 0.5 + surge * 0.4);
@@ -747,14 +762,14 @@ export function createOrbScene(container: HTMLElement): OrbSceneApi {
     // Debris orbits
     debris.forEach((d) => {
       const u = d.userData as DebrisOrbit;
-      const a = t * u.speed + u.phase;
+      const a = t * u.speed * speedMult + u.phase;
       d.position.set(
         u.orbitR * Math.cos(a) * Math.cos(u.tiltX),
         u.orbitR * Math.sin(u.tiltX) * Math.sin(a * 0.8) + Math.sin(a * 0.3 + u.tiltZ) * 0.2,
         u.orbitR * Math.sin(a) * Math.cos(u.tiltZ),
       );
-      d.rotation.x += 0.015;
-      d.rotation.z += 0.01;
+      d.rotation.x += 0.015 * speedMult;
+      d.rotation.z += 0.01 * speedMult;
     });
 
     // Text drift
@@ -766,7 +781,7 @@ export function createOrbScene(container: HTMLElement): OrbSceneApi {
     for (const [group, mult] of driftGroups) {
       group.children.forEach((sp) => {
         const u = sp.userData as SpriteDrift;
-        u.theta += u.speed * mult;
+        u.theta += u.speed * mult * speedMult;
         sp.position.set(
           u.r * Math.sin(u.phi) * Math.cos(u.theta),
           u.r * Math.cos(u.phi),
@@ -776,20 +791,20 @@ export function createOrbScene(container: HTMLElement): OrbSceneApi {
     }
 
     // Scan rings sweeping
-    const scanY1 = Math.sin(t * 0.4) * R1;
+    const scanY1 = Math.sin(t * (0.4 + speakingFactor * 0.6)) * R1;
     scanRing1.position.y = scanY1;
     const scanS1 = Math.sqrt(Math.max(0, R1 * R1 - scanY1 * scanY1)) / R1;
     scanRing1.scale.set(scanS1, scanS1, 1);
-    (scanRing1.material as THREE.MeshBasicMaterial).opacity = 0.2 * scanS1;
+    (scanRing1.material as THREE.MeshBasicMaterial).opacity = (0.2 + speakingFactor * 0.3) * scanS1;
 
-    const scanY2 = Math.sin(t * 0.6 + 2) * R3;
+    const scanY2 = Math.sin(t * (0.6 + speakingFactor * 0.8) + 2) * R3;
     scanRing2.position.y = scanY2;
     const scanS2 = Math.sqrt(Math.max(0, R3 * R3 - scanY2 * scanY2)) / R3;
     scanRing2.scale.set(scanS2, scanS2, 1);
-    (scanRing2.material as THREE.MeshBasicMaterial).opacity = 0.15 * scanS2;
+    (scanRing2.material as THREE.MeshBasicMaterial).opacity = (0.15 + speakingFactor * 0.25) * scanS2;
 
     // Dust rotation
-    dustPoints.rotation.y += 0.0002;
+    dustPoints.rotation.y += 0.0002 * speedMult;
 
     // Random flicker on some panels
     flickerTimer += 0.016;
@@ -802,8 +817,10 @@ export function createOrbScene(container: HTMLElement): OrbSceneApi {
       });
     }
 
-    // Bloom pulse
-    bloom.strength = 1.6 + Math.sin(t * 0.8) * 0.3;
+    // Bloom pulse — increase brightness & pulse frequency dynamically when speaking
+    const baseBloom = 1.6 + Math.sin(t * 0.8) * 0.3;
+    const speakingBloomPulse = speakingFactor * (1.8 + Math.sin(t * 10.0) * 0.8);
+    bloom.strength = baseBloom + speakingBloomPulse;
 
     // Update chromatic aberration time
     chromaticPass.uniforms.uTime.value = t;
@@ -853,6 +870,7 @@ export function createOrbScene(container: HTMLElement): OrbSceneApi {
     zoomIn: () => zoomBy(0.65),
     zoomOut: () => zoomBy(1.55),
     resetView,
+    setSpeaking,
     dispose,
   };
 }
