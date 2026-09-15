@@ -17,6 +17,7 @@ export interface OrbSceneApi {
   setSpeaking(speaking: boolean): void;
   setProcessing(processing: boolean): void;
   getOrbGroup(): THREE.Group;
+  getGlowIntensity(): { value: number };
   animateColor(targetHex: string, duration: number): gsap.core.Tween;
   animateGlowBrightness(targetBrightness: number, duration: number): gsap.core.Tween;
   dispose(): void;
@@ -718,6 +719,10 @@ export function createOrbScene(container: HTMLElement): OrbSceneApi {
   const currentColor = new THREE.Color("#FF7F11");
   const glowIntensity = { value: 1.0 };
 
+  function getGlowIntensity() {
+    return glowIntensity;
+  }
+
   function animateColor(targetHex: string, duration: number) {
     const target = new THREE.Color(targetHex);
     return gsap.to(currentColor, {
@@ -725,6 +730,7 @@ export function createOrbScene(container: HTMLElement): OrbSceneApi {
       g: target.g,
       b: target.b,
       duration,
+      ease: "power1.inOut",
       onUpdate: () => {
         glowSphereMat.color.copy(currentColor);
         coreSphereMat.color.copy(currentColor);
@@ -738,6 +744,7 @@ export function createOrbScene(container: HTMLElement): OrbSceneApi {
     return gsap.to(glowIntensity, {
       value: targetBrightness,
       duration,
+      ease: "power1.inOut",
     });
   }
 
@@ -859,7 +866,7 @@ export function createOrbScene(container: HTMLElement): OrbSceneApi {
 
     // Bloom pulse — scaled by glowIntensity.value and speakingFactor
     const baseBloom = (1.6 + Math.sin(t * 0.8) * 0.3) * glowIntensity.value;
-    const speakingBloomPulse = speakingFactor * (1.8 + Math.sin(t * 10.0) * 0.8) * glowIntensity.value;
+    const speakingBloomPulse = speakingFactor * (1.8 + Math.sin(t * 2.8) * 0.8) * glowIntensity.value;
     bloom.strength = baseBloom + speakingBloomPulse;
 
     // Update chromatic aberration time
@@ -913,6 +920,7 @@ export function createOrbScene(container: HTMLElement): OrbSceneApi {
     setSpeaking,
     setProcessing,
     getOrbGroup,
+    getGlowIntensity,
     animateColor,
     animateGlowBrightness,
     dispose,

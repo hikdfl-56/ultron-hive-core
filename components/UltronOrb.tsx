@@ -73,53 +73,60 @@ export default function UltronOrb({
     glowTweenRef.current?.kill();
 
     if (isProcessing) {
-      // State 1: Processing (isProcessing === true)
-      // Breathing Scale: Animate orb scale between 1.0 and 1.2 repeatedly with smooth power2.inOut ease
+      // 1. PROCESSING STATE (isProcessing === true)
+      // Breathing Speed: 3.0s expansion & 3.0s contraction (yoyo: true, repeat: -1, ease: "power1.inOut")
       scaleTweenRef.current = gsap.to(orbGroup.scale, {
         x: 1.2,
         y: 1.2,
         z: 1.2,
-        duration: 1.2,
+        duration: 3.0,
         repeat: -1,
         yoyo: true,
-        ease: "power2.inOut",
+        ease: "power1.inOut",
       });
 
-      // Glow Color: Smoothly shift primary glow color to deep reddish-orange / soft red (#E63946)
-      colorTweenRef.current = scene.animateColor("#E63946", 0.8);
-      glowTweenRef.current = scene.animateGlowBrightness(1.5, 0.8);
+      // Color Transition: Smoothly shift material color to rich crimson red (#D62828) over 1.5s
+      colorTweenRef.current = scene.animateColor("#D62828", 1.5);
+      glowTweenRef.current = scene.animateGlowBrightness(1.5, 1.5);
     } else if (isSpeaking) {
-      // State 2: Speaking (isSpeaking === true)
-      // Stop breathing, return scale to 1.0 smoothly
+      // 2. SPEAKING STATE (isSpeaking === true)
+      // Return scale smoothly back to 1.0 over 0.5s
       scaleTweenRef.current = gsap.to(orbGroup.scale, {
         x: 1.0,
         y: 1.0,
         z: 1.0,
+        duration: 0.5,
+        ease: "power1.out",
+      });
+
+      // Pulsing Speed & Intensity Control:
+      // Peak brightness (2.5) with smoothed ~0.4s pulse steps (yoyo: true, repeat: -1)
+      glowTweenRef.current = gsap.to(scene.getGlowIntensity(), {
+        value: 2.5,
         duration: 0.4,
-        ease: "power2.out",
+        repeat: -1,
+        yoyo: true,
+        ease: "power1.inOut",
       });
 
-      // Bright Glow: Instantly increase glow material brightness when speaking begins
-      glowTweenRef.current = scene.animateGlowBrightness(2.5, 0.1);
-
-      // Return Color: Transition color smoothly back to warmer orange tone (#FF7F11)
-      colorTweenRef.current = scene.animateColor("#FF7F11", 0.6);
+      // Return Color: Transition color smoothly back to default orange (#FF7F11) over 1.0s
+      colorTweenRef.current = scene.animateColor("#FF7F11", 1.0);
     } else {
-      // State 3: Idle (isProcessing === false, isSpeaking === false)
-      // Stop breathing animation and transition scale back to 1.0
+      // 3. IDLE STATE (isProcessing === false, isSpeaking === false)
+      // Return scale back to 1.0 over 1.0 second
       scaleTweenRef.current = gsap.to(orbGroup.scale, {
         x: 1.0,
         y: 1.0,
         z: 1.0,
-        duration: 0.6,
-        ease: "power2.out",
+        duration: 1.0,
+        ease: "power1.out",
       });
 
-      // Transition color back to standard warm orange (#FF7F11)
-      colorTweenRef.current = scene.animateColor("#FF7F11", 0.8);
+      // Return material color back to standard default orange (#FF7F11) over 1.0 second
+      colorTweenRef.current = scene.animateColor("#FF7F11", 1.0);
 
-      // Reduce glow brightness back to normal
-      glowTweenRef.current = scene.animateGlowBrightness(1.0, 0.6);
+      // Return glow brightness back to 1.0 over 1.0 second
+      glowTweenRef.current = scene.animateGlowBrightness(1.0, 1.0);
     }
   }, [isProcessing, isSpeaking]);
 
