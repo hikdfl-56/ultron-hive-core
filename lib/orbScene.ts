@@ -55,12 +55,16 @@ export function createOrbScene(container: HTMLElement): OrbSceneApi {
   );
   composer.addPass(bloom);
 
+  // Dynamic shader color tint vector
+  const targetTint = new THREE.Vector3(1.15, 0.85, 0.55);
+
   // Chromatic aberration + color grade shader
   const chromaticShader = {
     uniforms: {
       tDiffuse: { value: null },
       uTime: { value: 0 },
       uIntensity: { value: 0.003 },
+      uColorTint: { value: targetTint },
     },
     vertexShader: `
       varying vec2 vUv;
@@ -73,6 +77,7 @@ export function createOrbScene(container: HTMLElement): OrbSceneApi {
       uniform sampler2D tDiffuse;
       uniform float uTime;
       uniform float uIntensity;
+      uniform vec3 uColorTint;
       varying vec2 vUv;
       void main() {
         vec2 dir = vUv - vec2(0.5);
@@ -84,8 +89,8 @@ export function createOrbScene(container: HTMLElement): OrbSceneApi {
         vec4 cg = texture2D(tDiffuse, vUv);
         vec4 cb = texture2D(tDiffuse, vUv - dir * offset * 0.5);
         gl_FragColor = vec4(cr.r, cg.g * 1.05, cb.b * 0.6, 1.0) * flicker;
-        // Push towards amber/orange tone
-        gl_FragColor.rgb = mix(gl_FragColor.rgb, gl_FragColor.rgb * vec3(1.15, 0.85, 0.55), 0.3);
+        // Push towards active color tint
+        gl_FragColor.rgb = mix(gl_FragColor.rgb, gl_FragColor.rgb * uColorTint, 0.45);
       }
     `,
   };
@@ -725,19 +730,66 @@ export function createOrbScene(container: HTMLElement): OrbSceneApi {
 
   function animateColor(targetHex: string, duration: number) {
     const target = new THREE.Color(targetHex);
-    return gsap.to(currentColor, {
-      r: target.r,
-      g: target.g,
-      b: target.b,
-      duration,
-      ease: "power1.inOut",
-      onUpdate: () => {
-        glowSphereMat.color.copy(currentColor);
-        coreSphereMat.color.copy(currentColor);
-        dustMat.color.copy(currentColor);
-        icoWireMat.color.copy(currentColor);
+
+    // Calculate dynamic post-processing shader tint based on target color:
+    // If target is dominant red (r > g * 1.5), tint shader towards vibrant deep crimson red
+    const isRedDominant = target.r > target.g * 1.5;
+    const destTint = isRedDominant
+      ? new THREE.Vector3(1.7, 0.15, 0.15)
+      : new THREE.Vector3(1.15, 0.85, 0.55);
+
+    return gsap.to(
+      {
+        r: currentColor.r,
+        g: currentColor.g,
+        b: currentColor.b,
+        tr: targetTint.x,
+        tg: targetTint.y,
+        tb: targetTint.z,
       },
-    });
+      {
+        r: target.r,
+        g: target.g,
+        b: target.b,
+        tr: destTint.x,
+        tg: destTint.y,
+        tb: destTint.z,
+        duration,
+        ease: "power1.inOut",
+        onUpdate: function () {
+          const val = this.targets()[0];
+          currentColor.setRGB(val.r, val.g, val.b);
+          targetTint.set(val.tr, val.tg, val.tb);
+          chromaticPass.uniforms.uColorTint.value.copy(targetTint);
+
+          // Update main core & glow materials
+          glowSphereMat.color.copy(currentColor);
+          coreSphereMat.color.copy(currentColor);
+          dustMat.color.copy(currentColor);
+          icoWireMat.color.copy(currentColor);
+
+          // Update outer shell line materials
+          outerShell.traverse((child) => {
+            if ((child as THREE.Line).material) {
+              const mat = (child as THREE.Line).material as THREE.LineBasicMaterial;
+              mat.color.copy(currentColor);
+            }
+          });
+          innerCore.traverse((child) => {
+            if ((child as THREE.Line).material) {
+              const mat = (child as THREE.Line).material as THREE.LineBasicMaterial;
+              mat.color.copy(currentColor);
+            }
+          });
+          shell2.traverse((child) => {
+            if ((child as THREE.Line).material) {
+              const mat = (child as THREE.Line).material as THREE.LineBasicMaterial;
+              mat.color.copy(currentColor);
+            }
+          });
+        },
+      }
+    );
   }
 
   function animateGlowBrightness(targetBrightness: number, duration: number) {

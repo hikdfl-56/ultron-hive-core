@@ -74,7 +74,7 @@ export default function UltronOrb({
 
     if (isProcessing) {
       // 1. PROCESSING STATE (isProcessing === true)
-      // Breathing Speed: 3.0s expansion & 3.0s contraction (yoyo: true, repeat: -1, ease: "power1.inOut")
+      // Breathing Scale: 3.0s expansion & 3.0s contraction (yoyo: true, repeat: -1, ease: "power1.inOut")
       scaleTweenRef.current = gsap.to(orbGroup.scale, {
         x: 1.2,
         y: 1.2,
@@ -85,9 +85,11 @@ export default function UltronOrb({
         ease: "power1.inOut",
       });
 
-      // Color Transition: Smoothly shift material color to rich crimson red (#D62828) over 1.5s
-      colorTweenRef.current = scene.animateColor("#D62828", 1.5);
-      glowTweenRef.current = scene.animateGlowBrightness(1.5, 1.5);
+      // Enforce Deep Red Hue & Boost Emissive Intensity:
+      // Interpolate main and emissive material colors to a dominant crimson red (#DC2626) over 1.5s
+      // Boost emissive intensity / glow brightness significantly to 2.8 so red dominates the glow
+      colorTweenRef.current = scene.animateColor("#DC2626", 1.5);
+      glowTweenRef.current = scene.animateGlowBrightness(2.8, 1.5);
     } else if (isSpeaking) {
       // 2. SPEAKING STATE (isSpeaking === true)
       // Return scale smoothly back to 1.0 over 0.5s
@@ -99,8 +101,12 @@ export default function UltronOrb({
         ease: "power1.out",
       });
 
+      // Transition Back to Bright Orange:
+      // Transition smoothly over ~0.8s from deep processing red back to standard warm bright orange (#FF8C00) with high bloom
+      colorTweenRef.current = scene.animateColor("#FF8C00", 0.8);
+
       // Pulsing Speed & Intensity Control:
-      // Peak brightness (2.5) with smoothed ~0.4s pulse steps (yoyo: true, repeat: -1)
+      // Peak brightness (2.5) with smoothed ~0.4s pulse steps
       glowTweenRef.current = gsap.to(scene.getGlowIntensity(), {
         value: 2.5,
         duration: 0.4,
@@ -108,9 +114,6 @@ export default function UltronOrb({
         yoyo: true,
         ease: "power1.inOut",
       });
-
-      // Return Color: Transition color smoothly back to default orange (#FF7F11) over 1.0s
-      colorTweenRef.current = scene.animateColor("#FF7F11", 1.0);
     } else {
       // 3. IDLE STATE (isProcessing === false, isSpeaking === false)
       // Return scale back to 1.0 over 1.0 second
@@ -122,7 +125,7 @@ export default function UltronOrb({
         ease: "power1.out",
       });
 
-      // Return material color back to standard default orange (#FF7F11) over 1.0 second
+      // Return material color back to standard default warm orange (#FF7F11) over 1.0 second
       colorTweenRef.current = scene.animateColor("#FF7F11", 1.0);
 
       // Return glow brightness back to 1.0 over 1.0 second
