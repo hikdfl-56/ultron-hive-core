@@ -8,6 +8,7 @@ import gsap from "gsap";
 export interface UltronOrbProps {
   isSpeaking?: boolean;
   isProcessing?: boolean;
+  themeColor?: "orange" | "red";
 }
 
 type CameraState = "off" | "starting" | "on" | "error";
@@ -21,6 +22,7 @@ const MODE_LABEL: Record<TrackerStatus["mode"], string> = {
 export default function UltronOrb({
   isSpeaking = false,
   isProcessing = false,
+  themeColor = "orange",
 }: UltronOrbProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -60,14 +62,17 @@ export default function UltronOrb({
     sceneRef.current?.setProcessing(isProcessing);
   }, [isProcessing]);
 
-  // GSAP Visual State Animations
+  // GSAP Visual State Animations (responds to isProcessing, isSpeaking, and themeColor changes)
   useEffect(() => {
     const scene = sceneRef.current;
     if (!scene) return;
 
     const orbGroup = scene.getOrbGroup();
 
-    // Kill active tweens before transitioning state
+    // Determine active base theme target color
+    const activeBaseHex = themeColor === "red" ? "#DC2626" : "#FF7F11";
+
+    // Kill active tweens before transitioning state/theme
     scaleTweenRef.current?.kill();
     colorTweenRef.current?.kill();
     glowTweenRef.current?.kill();
@@ -101,12 +106,11 @@ export default function UltronOrb({
         ease: "power1.out",
       });
 
-      // Transition Back to Bright Orange:
-      // Transition smoothly over ~0.8s from deep processing red back to standard warm bright orange (#FF8C00) with high bloom
-      colorTweenRef.current = scene.animateColor("#FF8C00", 0.8);
+      // Transition to active theme base color over 0.8s
+      const speakingTargetHex = themeColor === "red" ? "#DC2626" : "#FF8C00";
+      colorTweenRef.current = scene.animateColor(speakingTargetHex, 0.8);
 
-      // Pulsing Speed & Intensity Control:
-      // Peak brightness (2.5) with smoothed ~0.4s pulse steps
+      // Pulsing Speed & Intensity Control: Peak brightness (2.5) with smoothed ~0.4s pulse steps
       glowTweenRef.current = gsap.to(scene.getGlowIntensity(), {
         value: 2.5,
         duration: 0.4,
@@ -125,13 +129,13 @@ export default function UltronOrb({
         ease: "power1.out",
       });
 
-      // Return material color back to standard default warm orange (#FF7F11) over 1.0 second
-      colorTweenRef.current = scene.animateColor("#FF7F11", 1.0);
+      // Smoothly interpolate emissive and base color to target theme color over 0.8 seconds
+      colorTweenRef.current = scene.animateColor(activeBaseHex, 0.8);
 
-      // Return glow brightness back to 1.0 over 1.0 second
-      glowTweenRef.current = scene.animateGlowBrightness(1.0, 1.0);
+      // Return glow brightness back to 1.0 over 0.8s
+      glowTweenRef.current = scene.animateGlowBrightness(1.0, 0.8);
     }
-  }, [isProcessing, isSpeaking]);
+  }, [isProcessing, isSpeaking, themeColor]);
 
   const stopGestures = useCallback(() => {
     trackerRef.current?.stop();

@@ -10,11 +10,15 @@ interface Message {
 interface HudChatOverlayProps {
   onSpeakingChange?: (isSpeaking: boolean) => void;
   onProcessingChange?: (isProcessing: boolean) => void;
+  themeColor?: "orange" | "red";
+  onToggleThemeColor?: () => void;
 }
 
 export default function HudChatOverlay({
   onSpeakingChange,
   onProcessingChange,
+  themeColor = "orange",
+  onToggleThemeColor,
 }: HudChatOverlayProps = {}) {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -125,55 +129,91 @@ export default function HudChatOverlay({
     }
   };
 
+  const isRedTheme = themeColor === "red";
+
   return (
     <div
-      className="hud-chat-panel border border-amber-500/60 bg-black/90 backdrop-blur-xl font-mono w-80 sm:w-96 rounded-md shadow-[0_0_20px_rgba(245,158,11,0.2)] overflow-hidden flex flex-col transition-all duration-300"
+      className="hud-chat-panel border bg-black/90 backdrop-blur-xl font-mono w-80 sm:w-96 rounded-md overflow-hidden flex flex-col transition-all duration-300"
       style={{
         backgroundColor: "rgba(0, 0, 0, 0.92)",
-        borderColor: "rgba(245, 158, 11, 0.6)",
+        borderColor: isRedTheme ? "rgba(220, 38, 38, 0.6)" : "rgba(245, 158, 11, 0.6)",
         backdropFilter: "blur(20px)",
-        boxShadow: "0 0 25px rgba(245, 158, 11, 0.25), inset 0 0 15px rgba(245, 158, 11, 0.05)",
+        boxShadow: isRedTheme
+          ? "0 0 25px rgba(220, 38, 38, 0.25), inset 0 0 15px rgba(220, 38, 38, 0.05)"
+          : "0 0 25px rgba(245, 158, 11, 0.25), inset 0 0 15px rgba(245, 158, 11, 0.05)",
       }}
     >
       {/* Header Bar */}
       <div
-        className="hud-chat-header flex items-center justify-between px-3.5 py-2.5 border-b border-amber-500/40 bg-amber-950/40 select-none"
+        className="hud-chat-header flex items-center justify-between px-3.5 py-2.5 border-b select-none"
         style={{
-          borderBottomColor: "rgba(245, 158, 11, 0.4)",
-          backgroundColor: "rgba(69, 26, 3, 0.4)",
+          borderBottomColor: isRedTheme ? "rgba(220, 38, 38, 0.4)" : "rgba(245, 158, 11, 0.4)",
+          backgroundColor: isRedTheme ? "rgba(69, 10, 10, 0.4)" : "rgba(69, 26, 3, 0.4)",
         }}
       >
         <div className="flex items-center gap-2">
           <span
-            className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"
+            className="w-2.5 h-2.5 rounded-full animate-pulse"
             style={{
-              backgroundColor: "#f59e0b",
-              boxShadow: "0 0 10px #f59e0b, 0 0 4px #fbbf24",
+              backgroundColor: isRedTheme ? "#dc2626" : "#f59e0b",
+              boxShadow: isRedTheme
+                ? "0 0 10px #dc2626, 0 0 4px #ef4444"
+                : "0 0 10px #f59e0b, 0 0 4px #fbbf24",
             }}
           />
           <span
-            className="text-xs font-bold tracking-widest text-amber-400 font-mono uppercase"
+            className="text-xs font-bold tracking-widest font-mono uppercase"
             style={{
-              color: "#fbbf24",
-              textShadow: "0 0 8px rgba(245, 158, 11, 0.8)",
+              color: isRedTheme ? "#f87171" : "#fbbf24",
+              textShadow: isRedTheme
+                ? "0 0 8px rgba(220, 38, 38, 0.8)"
+                : "0 0 8px rgba(245, 158, 11, 0.8)",
             }}
           >
             ULTRON AI HUD
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsMinimized(!isMinimized)}
-          className="text-xs text-amber-400 hover:text-amber-200 font-bold px-2 py-0.5 border border-amber-500/50 rounded bg-amber-950/60 hover:bg-amber-900/80 transition-colors"
-          style={{
-            color: "#fbbf24",
-            borderColor: "rgba(245, 158, 11, 0.5)",
-            backgroundColor: "rgba(69, 26, 3, 0.6)",
-          }}
-          aria-label={isMinimized ? "Expand HUD Chat" : "Minimize HUD Chat"}
-        >
-          {isMinimized ? "[+]" : "[−]"}
-        </button>
+
+        <div className="flex items-center gap-1.5">
+          {onToggleThemeColor && (
+            <button
+              type="button"
+              onClick={onToggleThemeColor}
+              className="text-[10px] font-bold px-2 py-0.5 border rounded transition-all duration-200 tracking-wider font-mono cursor-pointer"
+              style={
+                isRedTheme
+                  ? {
+                      color: "#f87171",
+                      borderColor: "rgba(220, 38, 38, 0.6)",
+                      backgroundColor: "rgba(69, 10, 10, 0.6)",
+                      boxShadow: "0 0 8px rgba(220, 38, 38, 0.4)",
+                    }
+                  : {
+                      color: "#fbbf24",
+                      borderColor: "rgba(245, 158, 11, 0.5)",
+                      backgroundColor: "rgba(69, 26, 3, 0.6)",
+                      boxShadow: "0 0 8px rgba(245, 158, 11, 0.3)",
+                    }
+              }
+              aria-label="Toggle ULTRON core theme color"
+            >
+              [ SYSTEM CORE: {themeColor.toUpperCase()} ]
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setIsMinimized(!isMinimized)}
+            className="text-xs font-bold px-2 py-0.5 border rounded transition-colors cursor-pointer"
+            style={{
+              color: isRedTheme ? "#f87171" : "#fbbf24",
+              borderColor: isRedTheme ? "rgba(220, 38, 38, 0.5)" : "rgba(245, 158, 11, 0.5)",
+              backgroundColor: isRedTheme ? "rgba(69, 10, 10, 0.6)" : "rgba(69, 26, 3, 0.6)",
+            }}
+            aria-label={isMinimized ? "Expand HUD Chat" : "Minimize HUD Chat"}
+          >
+            {isMinimized ? "[+]" : "[−]"}
+          </button>
+        </div>
       </div>
 
       {/* Main Body (Collapsed vs Expanded) */}
