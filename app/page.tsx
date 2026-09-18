@@ -23,7 +23,7 @@ export default function Home() {
         />
       </div>
 
-      <div className="fixed top-6 left-6 z-50 pointer-events-auto mt-10">
+      <div className="hud-chat-overlay fixed top-6 left-6 z-50 pointer-events-auto max-h-[80vh] max-w-sm w-full flex flex-col min-h-0">
         <HudChatOverlay
           onSpeakingChange={setIsSpeaking}
           onProcessingChange={setIsProcessing}

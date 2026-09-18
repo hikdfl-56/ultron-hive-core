@@ -249,10 +249,33 @@ body {
 .h-screen { height: 100vh; }
 .w-screen { width: 100vw; }
 .overflow-hidden { overflow: hidden; }
-.mt-10 { margin-top: 2.5rem; }
+.w-full { width: 100%; }
+.max-w-sm { max-width: 24rem; }
+.max-h-\[80vh\] { max-height: 80vh; }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-1 { flex: 1 1 0%; }
+.h-full { height: 100%; }
+.min-h-0 { min-height: 0; }
+.overflow-y-auto { overflow-y: auto; }
+
+.hud-chat-overlay {
+  /* Preserve the 24px inset on narrow screens while keeping the HUD on-screen. */
+  width: min(100%, calc(100vw - 3rem));
+}
 
 .hud-chat-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
   box-shadow: 0 0 20px rgba(255, 170, 48, 0.2), inset 0 0 15px rgba(255, 140, 20, 0.08);
+}
+
+.hud-chat-messages {
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .hud-chat-messages::-webkit-scrollbar {

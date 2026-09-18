@@ -133,7 +133,7 @@ export default function HudChatOverlay({
 
   return (
     <div
-      className="hud-chat-panel border bg-black/90 backdrop-blur-xl font-mono w-80 sm:w-96 rounded-md overflow-hidden flex flex-col transition-all duration-300"
+      className="hud-chat-panel border bg-black/90 backdrop-blur-xl font-mono w-80 sm:w-96 rounded-md overflow-hidden flex flex-col h-full min-h-0 transition-all duration-300"
       style={{
         backgroundColor: "rgba(0, 0, 0, 0.92)",
         borderColor: isRedTheme ? "rgba(220, 38, 38, 0.6)" : "rgba(245, 158, 11, 0.6)",
@@ -145,7 +145,7 @@ export default function HudChatOverlay({
     >
       {/* Header Bar */}
       <div
-        className="hud-chat-header flex items-center justify-between px-3.5 py-2.5 border-b select-none"
+        className="hud-chat-header flex-none flex items-center justify-between px-3.5 py-2.5 border-b select-none"
         style={{
           borderBottomColor: isRedTheme ? "rgba(220, 38, 38, 0.4)" : "rgba(245, 158, 11, 0.4)",
           backgroundColor: isRedTheme ? "rgba(69, 10, 10, 0.4)" : "rgba(69, 26, 3, 0.4)",
@@ -221,7 +221,7 @@ export default function HudChatOverlay({
         <>
           {/* Messages Container */}
           <div
-            className="hud-chat-messages flex-1 h-[380px] max-h-[45vh] overflow-y-auto p-3.5 space-y-3 text-xs bg-black/40"
+            className="hud-chat-messages flex-1 min-h-0 overflow-y-auto p-3.5 space-y-3 text-xs bg-black/40"
             style={{ backgroundColor: "rgba(0, 0, 0, 0.4)" }}
           >
             {messages.map((msg, i) => (
