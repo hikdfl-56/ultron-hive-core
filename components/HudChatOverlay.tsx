@@ -1,11 +1,7 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-}
+import React, { useState } from "react";
+import { useUltronChat } from "@/lib/useUltronChat";
 
 interface HudChatOverlayProps {
   onSpeakingChange?: (isSpeaking: boolean) => void;
@@ -20,114 +16,19 @@ export default function HudChatOverlay({
   themeColor = "orange",
   onToggleThemeColor,
 }: HudChatOverlayProps = {}) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content: "ULTRON CORE ONLINE. System telemetry operational. State your query.",
-    },
-  ]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isLoading]);
-
-  useEffect(() => {
-    onProcessingChange?.(isLoading);
-  }, [isLoading, onProcessingChange]);
-
-  useEffect(() => {
-    return () => {
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-        onSpeakingChange?.(false);
-      }
-    };
-  }, [onSpeakingChange]);
-
-  const speakText = (text: string) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      return;
-    }
-
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.pitch = 0.7;
-    utterance.rate = 0.9;
-
-    utterance.onstart = () => {
-      onSpeakingChange?.(true);
-    };
-
-    utterance.onend = () => {
-      onSpeakingChange?.(false);
-    };
-
-    utterance.onerror = (err) => {
-      console.warn("Speech synthesis error:", err);
-      onSpeakingChange?.(false);
-    };
-
-    window.speechSynthesis.speak(utterance);
-  };
-
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmedInput = input.trim();
-    if (!trimmedInput || isLoading) return;
-
-    const userMsg: Message = { role: "user", content: trimmedInput };
-    setMessages((prev) => [...prev, userMsg]);
-    setInput("");
-    setIsLoading(true);
-
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: trimmedInput }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-
-      const data = await res.json();
-      const replyContent =
-        data.response ||
-        data.message ||
-        "ULTRON Core active. Add AI_API_KEY to .env.local for live responses.";
-
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: replyContent },
-      ]);
-      speakText(replyContent);
-    } catch (err) {
-      console.warn("API request failed or endpoint unavailable:", err);
-      // Fallback mock response so UI never breaks
-      const fallbackContent =
-        "ULTRON Core active. Add AI_API_KEY to .env.local for live responses.";
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: fallbackContent,
-        },
-      ]);
-      speakText(fallbackContent);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const {
+    messages,
+    input,
+    setInput,
+    isLoading,
+    handleSend,
+    messagesEndRef,
+  } = useUltronChat({
+    onSpeakingChange,
+    onProcessingChange,
+  });
 
   const isRedTheme = themeColor === "red";
 
@@ -235,7 +136,10 @@ export default function HudChatOverlay({
                   className="text-[10px] tracking-wider font-bold mb-1"
                   style={{
                     color: msg.role === "user" ? "#38bdf8" : "#fbbf24",
-                    textShadow: msg.role === "user" ? "0 0 6px rgba(56, 189, 248, 0.5)" : "0 0 6px rgba(245, 158, 11, 0.5)",
+                    textShadow:
+                      msg.role === "user"
+                        ? "0 0 6px rgba(56, 189, 248, 0.5)"
+                        : "0 0 6px rgba(245, 158, 11, 0.5)",
                   }}
                 >
                   {msg.role === "user" ? "> USER" : "[ULTRON CORE]"}
@@ -258,7 +162,8 @@ export default function HudChatOverlay({
                           color: "#fef08a",
                           backgroundColor: "rgba(69, 26, 3, 0.65)",
                           borderColor: "rgba(245, 158, 11, 0.45)",
-                          boxShadow: "inset 0 0 10px rgba(245, 158, 11, 0.1), 0 0 8px rgba(0, 0, 0, 0.5)",
+                          boxShadow:
+                            "inset 0 0 10px rgba(245, 158, 11, 0.1), 0 0 8px rgba(0, 0, 0, 0.5)",
                         }
                   }
                 >
@@ -321,9 +226,15 @@ export default function HudChatOverlay({
               disabled={isLoading || !input.trim()}
               className="hud-chat-send-btn px-4 py-2 text-xs font-bold text-black bg-amber-500 hover:bg-amber-400 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 tracking-wider"
               style={{
-                backgroundColor: isLoading || !input.trim() ? "rgba(245, 158, 11, 0.4)" : "#f59e0b",
+                backgroundColor:
+                  isLoading || !input.trim()
+                    ? "rgba(245, 158, 11, 0.4)"
+                    : "#f59e0b",
                 color: "#000000",
-                boxShadow: isLoading || !input.trim() ? "none" : "0 0 12px rgba(245, 158, 11, 0.5)",
+                boxShadow:
+                  isLoading || !input.trim()
+                    ? "none"
+                    : "0 0 12px rgba(245, 158, 11, 0.5)",
               }}
             >
               SEND
